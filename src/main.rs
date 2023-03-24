@@ -1,6 +1,8 @@
 use std::{
     fs::File,
     io::{self, BufRead, BufReader},
+    sync::mpsc,
+    thread,
 };
 
 use colored::Colorize;
@@ -63,6 +65,8 @@ fn render_results(hits: &Vec<String>) {
 fn main() {
     let cli = Cli::parse();
 
+    let (tx, rx) = mpsc::channel();
+
     let re = RegexBuilder::new(cli.pattern.as_str())
         .case_insensitive(cli.insensitive)
         .build()
@@ -78,13 +82,24 @@ fn main() {
     } else {
         for file in cli.files {
             let f = File::open(&file).expect(format!("Could not open file: {}", file).as_str());
-            let reader = BufReader::new(f);
+            let re = re.clone();
+            let tx = tx.clone();
+            thread::spawn(move || {
+                let reader = BufReader::new(f);
 
-            if let Some(hits) = process_lines(reader, &re) {
-                println!("{}", file.blue());
-                render_results(&hits);
-                println!();
-            }
+                if let Some(hits) = process_lines(reader, &re) {
+                    tx.send((file, hits)).expect("Failed to send result");
+                }
+            });
+        }
+
+        drop(tx); // Drop the original one since its not being used.
+
+        for result in rx {
+            let (file, hits) = result;
+            println!("{}", file.blue());
+            render_results(&hits);
+            println!();
         }
     }
 }
