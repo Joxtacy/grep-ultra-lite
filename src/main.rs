@@ -4,7 +4,7 @@ use std::{
 };
 
 use colored::Colorize;
-use regex::{Captures, Regex};
+use regex::{Captures, Regex, RegexBuilder};
 
 use clap::Parser;
 
@@ -15,6 +15,8 @@ struct Cli {
     pattern: String,
     #[arg(help = "The file(s) to search")]
     files: Vec<String>,
+    #[arg(short, long, help = "Makes search case insensitive")]
+    insensitive: bool,
 }
 
 fn process_lines<T: BufRead + Sized>(reader: T, re: &Regex) -> Option<Vec<String>> {
@@ -61,7 +63,10 @@ fn render_results(hits: &Vec<String>) {
 fn main() {
     let cli = Cli::parse();
 
-    let re = Regex::new(cli.pattern.as_str()).expect("Could not parse regex");
+    let re = RegexBuilder::new(cli.pattern.as_str())
+        .case_insensitive(cli.insensitive)
+        .build()
+        .expect("Could not parse regex");
 
     if cli.files.is_empty() {
         let stdin = io::stdin();
