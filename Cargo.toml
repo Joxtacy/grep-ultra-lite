@@ -2,6 +2,18 @@
 name = "grep-ultra-lite"
 version = "0.1.0"
 edition = "2021"
+description = "A basic grep alternative"
+repository = "https://github.com/Joxtacy/grep-ultra-lite"
+homepage = "https://github.com/Joxtacy/grep-ultra-lite"
+categories = ["command-line-interface", "text-processing"]
+keywords = [
+  "regex",
+  "grep",
+  "search",
+  "pattern",
+]
+license = "MIT"
+license-file = "LICENSE"
 
 [[bin]]
 name = "rgl"
