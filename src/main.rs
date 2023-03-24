@@ -27,8 +27,8 @@ fn process_lines<T: BufRead + Sized>(reader: T, re: &Regex) -> Option<Vec<String
 
     for (i, line) in reader.lines().enumerate() {
         match line {
-            Ok(line) => match re.find(&line) {
-                Some(_) => {
+            Ok(line) => {
+                if re.find(&line).is_some() {
                     let line = re.replace_all(&line, |caps: &Captures| {
                         format!("{}", &caps[0].red().bold())
                     });
@@ -37,8 +37,7 @@ fn process_lines<T: BufRead + Sized>(reader: T, re: &Regex) -> Option<Vec<String
                     hits.push(hit);
                     found = true;
                 }
-                None => (),
-            },
+            }
             Err(err) => {
                 hits.push(format!(
                     "{}: Failed to parse line: {}",
@@ -50,9 +49,9 @@ fn process_lines<T: BufRead + Sized>(reader: T, re: &Regex) -> Option<Vec<String
     }
 
     if found {
-        return Some(hits);
+        Some(hits)
     } else {
-        return None;
+        None
     }
 }
 
@@ -81,7 +80,8 @@ fn main() {
         }
     } else {
         for file in cli.files {
-            let f = File::open(&file).expect(format!("Could not open file: {}", file).as_str());
+            let f = File::open(&file)
+                .unwrap_or_else(|err| panic!("Could not open file: {}. Reason: {}", file, err));
             let re = re.clone();
             let tx = tx.clone();
             thread::spawn(move || {
