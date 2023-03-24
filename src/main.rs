@@ -22,19 +22,26 @@ fn process_lines<T: BufRead + Sized>(reader: T, re: &Regex) -> Option<Vec<String
     let mut hits = vec![];
 
     for (i, line) in reader.lines().enumerate() {
-        let line = line.unwrap();
+        match line {
+            Ok(line) => match re.find(&line) {
+                Some(_) => {
+                    let line = re.replace_all(&line, |caps: &Captures| {
+                        format!("{}", &caps[0].red().bold())
+                    });
 
-        match re.find(&line) {
-            Some(_) => {
-                let line = re.replace_all(&line, |caps: &Captures| {
-                    format!("{}", &caps[0].red().bold())
-                });
-
-                let hit = format!("{}: {}", (i + 1).to_string().green(), line);
-                hits.push(hit);
-                found = true;
+                    let hit = format!("{}: {}", (i + 1).to_string().green(), line);
+                    hits.push(hit);
+                    found = true;
+                }
+                None => (),
+            },
+            Err(err) => {
+                hits.push(format!(
+                    "{}: Failed to parse line: {}",
+                    (i + 1).to_string().green(),
+                    err.to_string().red()
+                ));
             }
-            None => (),
         }
     }
 
