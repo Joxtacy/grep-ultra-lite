@@ -21,6 +21,38 @@ struct Cli {
     insensitive: bool,
 }
 
+#[cfg(test)]
+mod tests {
+    use std::io::BufReader;
+
+    use colored::Colorize;
+    use regex::Regex;
+
+    use crate::process_lines;
+
+    #[test]
+    fn match_one() {
+        let reader = BufReader::new("Hello test".as_bytes());
+        let re = Regex::new("Hello").unwrap();
+
+        let result = process_lines(reader, &re);
+
+        let expected = format!("{}: {} {}", "1".green(), "Hello".red().bold(), "test");
+
+        assert_eq!(result.unwrap()[0], expected);
+    }
+
+    #[test]
+    fn no_matches() {
+        let reader = BufReader::new("hi".as_bytes());
+        let re = Regex::new("this is not gonna hit").unwrap();
+
+        let result = process_lines(reader, &re);
+
+        assert!(result.is_none());
+    }
+}
+
 fn process_lines<T: BufRead + Sized>(reader: T, re: &Regex) -> Option<Vec<String>> {
     let mut found = false;
     let mut hits = vec![];
